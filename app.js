@@ -25,7 +25,12 @@ app.set('view engine', 'ejs');
 app.use(urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-var posts = [];
+Post.find({}, function(err, posts){
+  res.render("home", {
+    startingContent: homeStartingContent,
+    posts: posts
+  })
+})
 
 app.get('/', (req, res) => {
   res.render("home", { startingContent: posts })
@@ -46,18 +51,21 @@ app.post('/compose', function (req, res) {
       content: req.body.postBody
     }
   )
-  post.save();
-
-  res.redirect("/")
+  post.save(function(err) {
+    if(!err){
+      res.redirect("/")
+    }
+  });
 })
 
 app.get('/compose', (req, res) => {
   res.render("compose")
 })
 
-app.get('/posts/:postName', (req, res) => {
+app.get('/posts/:postId', (req, res) => {
   const requestedTitle = _.lowerCase(req.params.postName);
-  posts.forEach(function (post) {
+  const requestedPostId = req.params.postId;
+  Post.findOne({_id: requestedPostId},function (err, post) {
     const storedTitle = _.lowerCase(post.title)
     if (requestedTitle === storedTitle) {
       res.render("post", {
